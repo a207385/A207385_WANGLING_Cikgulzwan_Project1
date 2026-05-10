@@ -6,8 +6,12 @@ import androidx.activity.compose.setContent
 import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.*
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.List
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Home
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.*
@@ -17,53 +21,111 @@ import androidx.compose.ui.text.font.*
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.*
 import androidx.lifecycle.viewmodel.compose.viewModel
-import androidx.navigation.compose.*
 import androidx.navigation.NavController
+import androidx.navigation.compose.*
 import com.example.a207385_wangling_cikguizwan_project1.ui.theme.GroceryTheme
+import java.util.Locale
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
             GroceryTheme {
-
                 val navController = rememberNavController()
                 val viewModel: GroceryViewModel = viewModel()
 
-                NavHost(navController, startDestination = "home") {
+                val navBackStackEntry by navController.currentBackStackEntryAsState()
+                val currentRoute = navBackStackEntry?.destination?.route
 
-                    composable("home") {
-                        HomeScreen(navController)
-                    }
-
-                    composable("form") {
-                        FormScreen(viewModel) {
-                            viewModel.selectItem(it)
-                            navController.navigate("detail")
-                        }
-                    }
-
-                    composable("detail") {
-                        DetailScreen(viewModel) {
-                            viewModel.selectedItem?.let {
-                                viewModel.addIngredient(it)
+                Scaffold(
+                    bottomBar = {
+                        if (currentRoute in listOf("home", "form", "summary")) {
+                            NavigationBar(
+                                containerColor = Color.White,
+                                tonalElevation = 8.dp
+                            ) {
+                                NavigationBarItem(
+                                    icon = { Icon(Icons.Default.Home, contentDescription = "Home") },
+                                    label = { Text("Home") },
+                                    selected = currentRoute == "home",
+                                    onClick = {
+                                        navController.navigate("home") {
+                                            popUpTo("home") { inclusive = true }
+                                            launchSingleTop = true
+                                        }
+                                    },
+                                    colors = NavigationBarItemDefaults.colors(
+                                        selectedIconColor = Color(0xFF2E7D32),
+                                        indicatorColor = Color(0xFFC8E6C9)
+                                    )
+                                )
+                                NavigationBarItem(
+                                    icon = { Icon(Icons.Default.Add, contentDescription = "Add") },
+                                    label = { Text("Add Item") },
+                                    selected = currentRoute == "form",
+                                    onClick = {
+                                        navController.navigate("form") {
+                                            popUpTo("home")
+                                            launchSingleTop = true
+                                        }
+                                    },
+                                    colors = NavigationBarItemDefaults.colors(
+                                        selectedIconColor = Color(0xFF2E7D32),
+                                        indicatorColor = Color(0xFFC8E6C9)
+                                    )
+                                )
+                                NavigationBarItem(
+                                    icon = { Icon(Icons.AutoMirrored.Filled.List, contentDescription = "List") },
+                                    label = { Text("My Fridge") },
+                                    selected = currentRoute == "summary",
+                                    onClick = {
+                                        navController.navigate("summary") {
+                                            popUpTo("home")
+                                            launchSingleTop = true
+                                        }
+                                    },
+                                    colors = NavigationBarItemDefaults.colors(
+                                        selectedIconColor = Color(0xFF2E7D32),
+                                        indicatorColor = Color(0xFFC8E6C9)
+                                    )
+                                )
                             }
-                            navController.navigate("summary")
                         }
                     }
-
-                    composable("summary") {
-                        SummaryScreen(viewModel,
-                            onCalc = { navController.navigate("calc") },
-                            onBack = { navController.navigate("form") }
-                        )
-                    }
-
-                    composable("calc") {
-                        CalculationScreen(viewModel) {
-                            viewModel.resetProjectData()
-                            navController.navigate("home") {
-                                popUpTo("home") { inclusive = true }
+                ) { innerPadding ->
+                    NavHost(
+                        navController = navController,
+                        startDestination = "home",
+                        modifier = Modifier.padding(innerPadding)
+                    ) {
+                        composable("home") {
+                            HomeScreen(navController)
+                        }
+                        composable("form") {
+                            FormScreen(viewModel) {
+                                viewModel.selectItem(it)
+                                navController.navigate("detail")
+                            }
+                        }
+                        composable("detail") {
+                            DetailScreen(viewModel) {
+                                viewModel.selectedItem?.let {
+                                    viewModel.addIngredient(it)
+                                }
+                                navController.navigate("summary")
+                            }
+                        }
+                        composable("summary") {
+                            SummaryScreen(viewModel,
+                                onCalc = { navController.navigate("calc") }
+                            )
+                        }
+                        composable("calc") {
+                            CalculationScreen(viewModel) {
+                                viewModel.resetProjectData()
+                                navController.navigate("home") {
+                                    popUpTo("home") { inclusive = true }
+                                }
                             }
                         }
                     }
@@ -78,94 +140,90 @@ fun HomeScreen(navController: NavController) {
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .padding(horizontal = 28.dp, vertical = 40.dp)
+            .padding(horizontal = 24.dp, vertical = 20.dp)
             .verticalScroll(rememberScrollState()),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
+        Text(
+            text = "Eco Fridge Tracker",
+            fontSize = 36.sp,
+            fontWeight = FontWeight.ExtraBold,
+            color = Color(0xFF1B5E20),
+            textAlign = TextAlign.Center
+        )
+
+        Spacer(modifier = Modifier.height(8.dp))
 
         Text(
             text = "SDG 12: Responsible Consumption",
-            fontSize = 32.sp,
-            fontWeight = FontWeight.Bold,
-            color = Color(0xFF2E7D32),
-            textAlign = TextAlign.Center,
-            lineHeight = 38.sp
-        )
-
-        Spacer(modifier = Modifier.height(32.dp))
-
-        Text(
-            text = "Food waste is a major global issue.\n" +
-                    "Many households forget what they already have,\n" +
-                    "leading to overbuying and waste.",
             fontSize = 16.sp,
-            textAlign = TextAlign.Center,
-            color = Color.DarkGray,
-            lineHeight = 24.sp
+            fontWeight = FontWeight.Medium,
+            color = Color(0xFF4CAF50),
+            textAlign = TextAlign.Center
         )
 
-        Spacer(modifier = Modifier.height(20.dp))
+        Spacer(modifier = Modifier.height(40.dp))
 
-
-        Text(
-            text = "This app helps users track their food items\n" +
-                    "and reduce unnecessary waste 🌱",
-            fontSize = 15.sp,
-            textAlign = TextAlign.Center,
-            color = Color(0xFF757575),
-            lineHeight = 22.sp
-        )
+        Card(
+            modifier = Modifier.fillMaxWidth(),
+            colors = CardDefaults.cardColors(containerColor = Color(0xFFF1F8E9)),
+            shape = RoundedCornerShape(20.dp),
+            elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+        ) {
+            Column(
+                modifier = Modifier.padding(24.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Text(
+                    text = "🌍",
+                    fontSize = 56.sp
+                )
+                Spacer(modifier = Modifier.height(16.dp))
+                Text(
+                    text = "Food waste is a major global issue that directly increases our carbon footprint.",
+                    fontSize = 16.sp,
+                    textAlign = TextAlign.Center,
+                    color = Color.DarkGray,
+                    fontWeight = FontWeight.Medium,
+                    lineHeight = 24.sp
+                )
+                Spacer(modifier = Modifier.height(12.dp))
+                Text(
+                    text = "Track your fridge items and calculate the CO₂ you save by consuming responsibly.",
+                    fontSize = 14.sp,
+                    textAlign = TextAlign.Center,
+                    color = Color(0xFF757575),
+                    lineHeight = 20.sp
+                )
+            }
+        }
 
         Spacer(modifier = Modifier.height(48.dp))
 
-
         Button(
-            onClick = { navController.navigate("form") },
+            onClick = {
+                navController.navigate("form") {
+                    popUpTo("home")
+                    launchSingleTop = true
+                }
+            },
             modifier = Modifier
                 .fillMaxWidth()
-                .height(58.dp),
-            colors = ButtonDefaults.buttonColors(
-                containerColor = Color(0xFFEF6C00)
-            ),
-            shape = MaterialTheme.shapes.medium
+                .height(56.dp),
+            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFEF6C00)),
+            shape = RoundedCornerShape(16.dp)
         ) {
-            Text(
-                "Start Adding Items",
-                fontSize = 18.sp,
-                fontWeight = FontWeight.Medium
-            )
-        }
-
-        Spacer(modifier = Modifier.height(20.dp))
-
-
-        OutlinedButton(
-            onClick = { navController.navigate("summary") },
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(58.dp),
-            shape = MaterialTheme.shapes.medium
-        ) {
-            Text(
-                "View Fridge List",
-                fontSize = 18.sp,
-                fontWeight = FontWeight.Medium
-            )
+            Text("Start Tracking Now", fontSize = 18.sp, fontWeight = FontWeight.Bold)
         }
     }
 }
+
 @Composable
 fun FormScreen(viewModel: GroceryViewModel, onClick: (GroceryItem) -> Unit) {
-
-    // 👉 按 category 分组
     val groupedItems = viewModel.allIngredients.groupBy { it.category }
-
     LazyColumn(modifier = Modifier.padding(16.dp)) {
-
         groupedItems.forEach { (category, items) ->
-
-            // 🟢 分类标题
             item {
                 Text(
                     text = category,
@@ -175,10 +233,7 @@ fun FormScreen(viewModel: GroceryViewModel, onClick: (GroceryItem) -> Unit) {
                     modifier = Modifier.padding(vertical = 8.dp)
                 )
             }
-
-            // 🟢 分类里的每个 item
             items(items) { item ->
-
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -186,15 +241,12 @@ fun FormScreen(viewModel: GroceryViewModel, onClick: (GroceryItem) -> Unit) {
                         .padding(vertical = 8.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-
                     Image(
                         painter = painterResource(item.imageRes),
                         contentDescription = null,
                         modifier = Modifier.size(50.dp)
                     )
-
                     Spacer(modifier = Modifier.width(12.dp))
-
                     Column {
                         Text(item.name, fontWeight = FontWeight.Bold)
                         Text(item.category, fontSize = 12.sp, color = Color.Gray)
@@ -212,71 +264,78 @@ fun DetailScreen(viewModel: GroceryViewModel, onAdd: () -> Unit) {
         Text("No item selected", color = Color.Red)
         return
     }
-
-    item?.let {
-        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-            Image(painterResource(it.imageRes), null, modifier = Modifier.size(200.dp))
-            Text(it.name, fontSize = 24.sp)
-
-            Text("${item.impactValue} kg CO2", fontSize = 12.sp, color = Color.Gray)
-            Button(onClick = onAdd) {
-                Text("Add")
-            }
+    Column(
+        modifier = Modifier.fillMaxSize(),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center
+    ) {
+        Image(painterResource(item.imageRes), null, modifier = Modifier.size(200.dp))
+        Spacer(Modifier.height(20.dp))
+        Text(item.name, fontSize = 28.sp, fontWeight = FontWeight.Bold)
+        Text("Carbon Footprint Saved: ${item.impactValue} kg CO₂", fontSize = 16.sp, color = Color.Gray)
+        Spacer(Modifier.height(30.dp))
+        Button(
+            onClick = onAdd,
+            modifier = Modifier.size(width = 160.dp, height = 50.dp),
+            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF2E7D32))
+        ) {
+            Text("Add to Fridge", fontSize = 18.sp)
         }
     }
 }
+
 @Composable
-fun SummaryScreen(viewModel: GroceryViewModel, onCalc: () -> Unit, onBack: () -> Unit) {
-
+fun SummaryScreen(viewModel: GroceryViewModel, onCalc: () -> Unit) {
     Column(modifier = Modifier.fillMaxSize().padding(16.dp)) {
-
-        Text("Summary", fontSize = 22.sp, fontWeight = FontWeight.Bold)
+        Text("My Fridge 🥦", fontSize = 26.sp, fontWeight = FontWeight.Bold)
+        Spacer(Modifier.height(10.dp))
 
         if (viewModel.summaryItems.isEmpty()) {
-            Text("No items yet", color = Color.Gray)
-        }
-
-        LazyColumn(modifier = Modifier.weight(1f)) {
-            items(viewModel.summaryItems) { item ->
-
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(10.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-
-                    Image(
-                        painter = painterResource(item.imageRes),
-                        contentDescription = null,
-                        modifier = Modifier.size(50.dp)
-                    )
-
-                    Spacer(modifier = Modifier.width(10.dp))
-
-                    Column(modifier = Modifier.weight(1f)) {
-                        Text(item.name, fontWeight = FontWeight.Bold)
-                        Text(item.category, color = Color.Gray, fontSize = 12.sp)
-                        Text("${item.impactValue} kg CO2", fontSize = 12.sp, color = Color.Gray)
-                    }
-
-                    IconButton(onClick = { viewModel.removeIngredient(item) }) {
-                        Icon(Icons.Default.Delete, contentDescription = null, tint = Color.Red)
+            Box(modifier = Modifier.weight(1f), contentAlignment = Alignment.Center) {
+                Text(
+                    text = "Your fridge is empty! 🌬️\nLet's add some food to start saving the planet.",
+                    textAlign = TextAlign.Center,
+                    color = Color.Gray,
+                    fontSize = 16.sp
+                )
+            }
+        } else {
+            LazyColumn(modifier = Modifier.weight(1f)) {
+                items(viewModel.summaryItems) { item ->
+                    Row(
+                        modifier = Modifier.fillMaxWidth().padding(vertical = 10.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Image(
+                            painter = painterResource(item.imageRes),
+                            contentDescription = null,
+                            modifier = Modifier.size(50.dp)
+                        )
+                        Spacer(modifier = Modifier.width(10.dp))
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(item.name, fontWeight = FontWeight.Bold)
+                            Text("${item.impactValue} kg CO₂", fontSize = 12.sp, color = Color.Gray)
+                        }
+                        IconButton(onClick = { viewModel.removeIngredient(item) }) {
+                            Icon(Icons.Default.Delete, contentDescription = "Delete", tint = Color.Red)
+                        }
                     }
                 }
             }
         }
 
-        Row {
-            Button(onClick = onBack, modifier = Modifier.weight(1f)) {
-                Text("Back")
-            }
-            Button(onClick = onCalc, modifier = Modifier.weight(1f)) {
-                Text("Calculate")
-            }
+        Spacer(Modifier.height(10.dp))
+        Button(
+            onClick = onCalc,
+            modifier = Modifier.fillMaxWidth().height(50.dp),
+            enabled = viewModel.summaryItems.isNotEmpty(),
+            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFEF6C00))
+        ) {
+            Text("Calculate CO₂ Saved", fontSize = 18.sp)
         }
     }
 }
+
 @Composable
 fun CalculationScreen(viewModel: GroceryViewModel, onFinish: () -> Unit) {
     val totalImpact = viewModel.summaryItems.sumOf { it.impactValue }
@@ -287,32 +346,17 @@ fun CalculationScreen(viewModel: GroceryViewModel, onFinish: () -> Unit) {
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
-        Text(
-            "Final Result",
-            fontSize = 40.sp,
-            fontWeight = FontWeight.Bold,
-            color = Color(0xFF2E7D32)
-        )
-
+        Text("Your Impact", fontSize = 40.sp, fontWeight = FontWeight.Bold, color = Color(0xFF2E7D32))
         Spacer(Modifier.height(24.dp))
-
-        Text("Items: $count", fontSize = 24.sp)
+        Text("Items Saved from Waste: $count", fontSize = 20.sp)
         Text(
-            "CO₂ Reduction: ${String.format("%.2f", totalImpact)} kg",
+            "CO₂ Reduction: ${String.format(Locale.US, "%.2f", totalImpact)} kg",
             fontSize = 28.sp,
             fontWeight = FontWeight.Bold
         )
-
         Spacer(Modifier.height(24.dp))
-
-        Text(
-            "Reduce waste • Protect environment 🌍",
-            color = Color.Gray,
-            fontSize = 20.sp
-        )
-
+        Text("Reduce waste • Protect environment 🌍", color = Color.Gray, fontSize = 18.sp)
         Spacer(Modifier.height(40.dp))
-
         Button(
             onClick = onFinish,
             modifier = Modifier.size(width = 160.dp, height = 50.dp)

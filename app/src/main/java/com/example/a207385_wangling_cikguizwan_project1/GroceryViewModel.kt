@@ -34,7 +34,6 @@ class GroceryViewModel : ViewModel() {
         selectedItem = item
     }
 
-    // ✅ 防重复添加（返回是否成功）
     fun addIngredient(item: GroceryItem): Boolean {
         return if (!_summaryItems.contains(item)) {
             _summaryItems.add(item)
